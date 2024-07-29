@@ -17,8 +17,9 @@ This project is based on the [Wattpad2epub](https://github.com/Architrixs/Wattpa
 ### Method 1: Download Executable
 
 1. **Go to the [Releases Page](https://github.com/cub16/BookNow/releases)** of this repository.
-2. **Download the Latest Executable**
-3. **Run the Executable**
+2. **Download the Latest Release**
+3. **Unzip the ZIP file**
+4. **Run the executable located in the 'dist' directory**
 
 ### Method 2: Clone the Source Code
 
