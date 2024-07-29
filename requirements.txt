@@ -1,0 +1,5 @@
+pyperclip
+pypandoc
+customtkinter
+notify-py
+pyinstaller

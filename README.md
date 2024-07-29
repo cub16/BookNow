@@ -1,41 +1,32 @@
-# Wattpad2Epub
-Python Script to Scrape Wattpad Story and convert to Epub and html file.
-### This program will create:
-1. A html file of the entire Wattpad Book AND (You can directly Use this one to read, Images are preserved in this format.)
-2. A Epub file of the entire Wattpad Book.(The Epub will have separate marked Chapters instead of all chapters as one whole. *Images included*.)
+# BookNow
 
-### Libraries used : 
-1. Pyperclip
-2. Requests 
-3. BeautifulSoup4 
-4. re
-5. Pypandoc
-6. argparse
+A tool to download books from Wattpad. This project is a fork of the `Wattpad2epub` repository by Architrixs, with enhancements and a user-friendly graphical interface built using Python and CustomTkinter.
 
-### Note: Pypandoc uses pandoc, so it needs an available installation of pandoc.
-### Installing pandoc via pypandoc
-Installing via pypandoc is possible on Windows, Mac OS X or Linux (Intel-based, 64-bit):
-```
-# expects an installed pypandoc: pip install pypandoc
-from pypandoc.pandoc_download import download_pandoc
-# see the documentation how to customize the installation path
-# but be aware that you then need to include it in the `PATH`
-download_pandoc()
-```
-The default install location is included in the search path for pandoc, so you don't need to add it to the PATH.
+## Features
 
-### HOW TO USE :1. Just copy the URL of any Story of the Wattpad Book. I repeat copy URL of any "Story"... you got it!
-#### It should look something like this: `https://www.wattpad.com/story/39479-paper-ghosts`
-2. Either Directly Run
+- **Download Books**: Fetch and save Wattpad stories in various formats.
+- **User-Friendly Interface**: CustomTkinter is used for a modern, intuitive design.
+- **Python-Based**: Leverage Python's power and libraries for efficient book downloading.
 
-        Wattpad2epub.py
-        or
-        Wattpad2epub.py Story_url     #Pyperclip library not needed for this.
-   
-   Yes, it can take 1 Commandline Argument as the copied url of the Story.
-3. You got html and epub saved in the same location.
+## Fork Information
 
-![Image of Wattpad2Epub](https://github.com/Architrixs/Wattpad2Epub/blob/main/Image_wattpad2Epub.png)
-![Image of Wattpad2epub Windows](https://github.com/Architrixs/Wattpad2Epub/blob/main/wattpad2epub-windows.JPG)
+This project is based on the [Wattpad2epub](https://github.com/Architrixs/Wattpad2epub) repository by Architrixs. The original project provides basic functionality for converting Wattpad stories to EPUB format. This fork adds enhancements and a graphical user interface for a more user-friendly experience.
 
-### I found my script easy to use, but feel free to point out mistakes. Open Issues if you find any.
+## Installation
+
+### Method 1: Download Executable
+
+1. **Go to the [Releases Page](https://github.com/cub16/BookNow/releases)** of this repository.
+2. **Download the Latest Executable**
+3. **Run the Executable**
+
+### Method 2: Clone the Source Code
+
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/cub16/BookNow.git
+   ```
+2. **Execute `gui.py`**
+   ```bash
+   python gui.py
+   ```

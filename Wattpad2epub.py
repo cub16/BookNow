@@ -2,30 +2,20 @@
 """
 # Python Script to Scrape Wattpad Story and convert to Epub and html file.
 # By Architrixs, Created Nov 5, 2020.
+# Modified by cub16.
 # This program will create:
 # 1. A html file of the entire Wattpad Book AND (You can directly Use this one to read, Images are preserved in this format.)
-# 2. A Epub file of the entire Wattpad Book.(The Epub will have separate marked Chapters instead of all chapters as one whole.)
-
-HOW TO USE :
-1. Just copy the URL of any Chapter of the Wattpad Book. I repeat copy URL of any "Chapter"... you got it!
-2. Either Directly Run 
-	>>Wattpad2epub.py
-   or	>>Wattpad2epub.py Story_url
-   
-   Yes it can take 1 Commandline Argument as the copied url of the Story.
-3. You got html and epub saved in the same location.
 """
 import argparse
 import bs4
 import requests
 import pyperclip
 import re
-import pypandoc
-import os
+import base64
 
 base_apiV2_url = "https://www.wattpad.com/apiv2/"
 base_apiV3_url = "https://www.wattpad.com/api/v3/"
-dev_error_msg = "Please check the url again, for valid story id. Contact the developer if you think this is a bug."
+dev_error_msg = "ERR"
 """
 https://www.wattpad.com/api/v3/stories/{{story_id}}?drafts=0&mature=1&include_deleted=1&fields=id,title,createDate,modifyDate,voteCount,readCount,commentCount,description,url,firstPublishedPart,cover,language,isAdExempt,user(name,username,avatar,location,highlight_colour,backgroundUrl,numLists,numStoriesPublished,numFollowing,numFollowers,twitter),completed,isPaywalled,paidModel,numParts,lastPublishedPart,parts(id,title,length,url,deleted,draft,createDate),tags,categories,rating,rankings,tagRankings,language,storyLanguage,copyright,sourceLink,firstPartId,deleted,draft,hasBannedCover,length
 """
@@ -49,6 +39,18 @@ def download_webpage(url):
         print("There was a problem: %s" % (exc))
         return None
 
+def img_to_base64(url):
+    return base64.b64encode(requests.get(url).content).decode('utf-8')
+
+def convert_images_in_html(html_content):
+    soup = bs4.BeautifulSoup(html_content, 'html.parser')
+    for img_tag in soup.find_all('img'):
+        img_url = img_tag.get('src')
+        if img_url and img_url.startswith(('http://', 'https://')):
+            base64_image = img_to_base64(img_url)
+            if base64_image:
+                img_tag['src'] = f"data:image/{img_url.split('.')[-1]};base64,{base64_image}"
+    return str(soup)
 
 def extract_useful_data(json_data):
     """Extracts useful data from the JSON response."""
@@ -57,40 +59,41 @@ def extract_useful_data(json_data):
     chapters = json_data.get('parts', '')
     storyName = json_data.get('title', '')
     author = json_data.get('user', '')
-    cover = json_data.get('cover', '')
+    cover = img_to_base64(json_data.get('cover', ''))
     return summary, tags, chapters, storyName, author, cover
+
 
 
 def save_html_file(file_name, story_name, author, cover, tags, summary, chapters):
     """Saves the HTML file with the given data."""
+
     file = open(file_name, 'w', encoding='utf-8')
+
+    custom_css = requests.get("https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css")
 
     file.write(f"""
         <html>
         <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <meta name='title' content='{story_name}'>
-            <meta name='author' content='{author["name"]}' >
+            <meta name='author' content='{author["name"]}'>
+            <style>
+            {custom_css.text}
+            </style>
         </head>
         <body>
-        <div style="text-align:center;">
-            <img src="{cover}" alt="cover_image">
+        <div style="text-align: center;">
+            <img src="data:image/png;base64,{cover}" alt="cover_image">
         </div>
         <br>
-        <h5 align="center">{story_name}</h5>
-        <h6 align="center">By {author["name"]} : <a href="https://www.wattpad.com/user/{author["username"]}">{author["username"]}</a></h6>
+        <h1 align="center">{story_name}</h1>
+        <h4 align="center"><a href="https://www.wattpad.com/user/{author["username"]}">{author["username"]}</a></h4>
 
         <div align="center">Tags: {tags} </div>
         <br><br>
         <div align="center">{summary}</div>
         
-        <br><br>
-        <div align="left">
-            <h6>
-                * If chapter number or names are jumbled up, it's definitely the author's fault.
-                (Author-san, please number them correctly and in order.)<br>
-                * Converted using Wattpad2epub by Architrixs<br>
-            </h6>
-        </div>
     """)
     for i, chapter in enumerate(chapters):
         print(f"Getting Chapter {i + 1}....")
@@ -100,27 +103,16 @@ def save_html_file(file_name, story_name, author, cover, tags, summary, chapters
             soup_res = bs4.BeautifulSoup(chapter_content, 'html.parser')
             file.write(f"""
                 <br><br>
-                <h2>Chapter {i + 1}: '{chapter['title']}'</h2><br><br>
-                {soup_res.prettify()}
+                <div class='container'>
+                    <h2>{chapter['title']}</h2>
+                    <br><br>
+                    {convert_images_in_html(soup_res.prettify())}
+                </div>
             """)
+
     file.write("</body></html>")
     file.close()
     print(f"Saved {file_name}")
-
-
-def save_epub_file(html_file, story_name, cover):
-    """Converts the HTML file to EPUB format and saves it."""
-    print("Generating EPUB...")
-    story_name = story_name.replace('/', ' ')
-    cover_image = f"{story_name}.jpg"
-    res_img = requests.get(cover, headers={'User-Agent': 'Mozilla/5.0'})
-    open(cover_image, 'wb').write(res_img.content)
-    output_file = f"{story_name}.epub"
-
-    pypandoc.convert_file(html_file, 'epub3', outputfile=output_file, extra_args=['--epub-chapter-level=2', f'--epub-cover-image={cover_image}'], sandbox=False)
-
-    os.remove(cover_image)
-    print(f"Saved {output_file}")
 
 
 def main(url):
@@ -161,9 +153,6 @@ def main(url):
     html_file_name = f"{story_name}.html"
     html_file_name = html_file_name.replace('/', ' ')
     save_html_file(html_file_name, story_name, author, cover, tags, summary, chapters)
-
-    # Converting HTML to EPUB.
-    save_epub_file(html_file_name, story_name, cover)
 
 
 if __name__ == "__main__":
