@@ -1,17 +1,15 @@
 #! /usr/bin/python3
 """
-# Python Script to Scrape Wattpad Story and convert to Epub and html file.
-# By Architrixs, Created Nov 5, 2020.
-# Modified by cub16.
-# This program will create:
-# 1. A html file of the entire Wattpad Book AND (You can directly Use this one to read, Images are preserved in this format.)
+### Python Script to Scrape Wattpad Story and convert to Epub and html file.
+#### By Architrixs, Created Nov 5, 2020.
+#### Modified by cub16.
 """
-import argparse
 import bs4
 import requests
-import pyperclip
 import re
 import base64
+import minify_html
+
 
 base_apiV2_url = "https://www.wattpad.com/apiv2/"
 base_apiV3_url = "https://www.wattpad.com/api/v3/"
@@ -19,6 +17,7 @@ dev_error_msg = "ERR"
 """
 https://www.wattpad.com/api/v3/stories/{{story_id}}?drafts=0&mature=1&include_deleted=1&fields=id,title,createDate,modifyDate,voteCount,readCount,commentCount,description,url,firstPublishedPart,cover,language,isAdExempt,user(name,username,avatar,location,highlight_colour,backgroundUrl,numLists,numStoriesPublished,numFollowing,numFollowers,twitter),completed,isPaywalled,paidModel,numParts,lastPublishedPart,parts(id,title,length,url,deleted,draft,createDate),tags,categories,rating,rankings,tagRankings,language,storyLanguage,copyright,sourceLink,firstPartId,deleted,draft,hasBannedCover,length
 """
+
 
 def get_chapter_id(url):
     """Extracts the chapter ID from the given URL."""
@@ -34,7 +33,8 @@ def download_webpage(url):
     try:
         res = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'})
         res.raise_for_status()
-        return res.text
+        sanitized_res = res.text.replace('style="text-align:center;"', "")
+        return sanitized_res
     except requests.exceptions.RequestException as exc:
         print("There was a problem: %s" % (exc))
         return None
@@ -65,54 +65,78 @@ def extract_useful_data(json_data):
 
 
 def save_html_file(file_name, story_name, author, cover, tags, summary, chapters):
+    global download_status
     """Saves the HTML file with the given data."""
 
     file = open(file_name, 'w', encoding='utf-8')
 
-    custom_css = requests.get("https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css")
+    with open("./pico.min.css") as pico_file:
+        global PicoCSS
+        PicoCSS = pico_file.read()
 
-    file.write(f"""
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <meta name='title' content='{story_name}'>
-            <meta name='author' content='{author["name"]}'>
-            <style>
-            {custom_css.text}
-            </style>
-        </head>
-        <body>
-        <div style="text-align: center;">
-            <img src="data:image/png;base64,{cover}" alt="cover_image">
+    with open("./custom.css") as custom_file:
+        global customCSS
+        customCSS = custom_file.read()
+
+    file_content = ""
+
+    file_content += f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="title" content="{story_name}">
+    <meta name="author" content="{author['name']}">
+    <meta name="description" content="{summary}">
+    <title>{story_name}</title>
+    <style>
+        {PicoCSS}
+    </style>
+    <style>{customCSS}</style>
+</head>
+<body class="container">
+    <header style="text-align: center">
+        <div>
+            <img src="data:image/png;base64,{cover}" alt="{story_name} [Cover]">
         </div>
-        <br>
-        <h1 align="center">{story_name}</h1>
-        <h4 align="center"><a href="https://www.wattpad.com/user/{author["username"]}">{author["username"]}</a></h4>
+        <h1>{story_name}</h1>
+        <h4>
+            <a href="https://www.wattpad.com/user/{author['username']}">
+                {author['username']}
+            </a>
+        </h4>
+    </header>
 
-        <div align="center">Tags: {tags} </div>
-        <br><br>
-        <div align="center">{summary}</div>
+    <section>
+        <p class="tags">Tags: {", ".join(tags)}</p>
+        <p>{summary}</p>
+    </section>
         
-    """)
+    """
     for i, chapter in enumerate(chapters):
-        print(f"Getting Chapter {i + 1}....")
         chapter_url = base_apiV2_url + f"storytext?id={chapter['id']}"
         chapter_content = download_webpage(chapter_url)
         if chapter_content:
             soup_res = bs4.BeautifulSoup(chapter_content, 'html.parser')
-            file.write(f"""
+            file_content += f"""
                 <br><br>
-                <div class='container'>
+                <div>
                     <h2>{chapter['title']}</h2>
                     <br><br>
                     {convert_images_in_html(soup_res.prettify())}
                 </div>
-            """)
+            """
 
-    file.write("</body></html>")
+    file_content += "</body></html>"
+
+
+    file_content_minified = minify_html.minify(file_content)
+    file.write(file_content_minified)
     file.close()
+
     print(f"Saved {file_name}")
+    return True
 
 
 def main(url):
@@ -153,16 +177,3 @@ def main(url):
     html_file_name = f"{story_name}.html"
     html_file_name = html_file_name.replace('/', ' ')
     save_html_file(html_file_name, story_name, author, cover, tags, summary, chapters)
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Wattpad2epub: Convert Wattpad stories to EPUB format.')
-    parser.add_argument('url', nargs='?', help='URL of the Wattpad Story')
-    args = parser.parse_args()
-
-    if args.url:
-        main(args.url)
-    else:
-        # Getting address from clipboard.
-        url = pyperclip.paste()
-        main(url)

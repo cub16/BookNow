@@ -14,20 +14,28 @@ This project is based on the [Wattpad2epub](https://github.com/Architrixs/Wattpa
 
 ## Installation
 
-### Method 1: Download Executable
+### Method 1: Download Executable (Windows)
 
 1. **Go to the [Releases Page](https://github.com/cub16/BookNow/releases)** of this repository.
 2. **Download the Latest Release**
 3. **Unzip the ZIP file**
-4. **Run the executable located in the 'dist' directory**
+4. **Run the executable named 'gui.exe' located in the 'exe.win-amd64-3.12' directory**
 
 ### Method 2: Clone the Source Code
 
 1. **Clone the Repository**:
+
    ```bash
    git clone https://github.com/cub16/BookNow.git
    ```
-2. **Execute `gui.py`**
+
+2. **Install dependencies**
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Execute `gui.py`**
    ```bash
    python gui.py
    ```
