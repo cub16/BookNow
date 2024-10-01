@@ -1,4 +1,0 @@
-customtkinter
-minify-html
-cx_Freeze
-bs4

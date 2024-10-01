@@ -1,5 +1,0 @@
-- UI Improvements: Updated design for a cleaner look.
-- Async Operations: Shifted from synchronous to asynchronous for better performance.
-- Optimization: Reduced dependencies to enhance efficiency.
-- Downloaded Books UI: Improved HTML and CSS for a better presentation of downloaded books.
-- Moved from PyInstaller to cx_Freeze: Transitioned from PyInstaller to cx_Freeze for improved build processes
